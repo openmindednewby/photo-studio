@@ -1,6 +1,6 @@
 {
   "name": "@dloizides/photo-studio",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "On-device photo capture and clean-up for RN-web: live camera with fallback, gallery and drop, crop, rotate, edge detection with perspective straighten, filters, and a side-by-side slot, run in a Web Worker.",
   "keywords": [
     "react-native-web",
