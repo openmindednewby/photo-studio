@@ -64,8 +64,10 @@ export interface EditorLabels {
   readonly changePhoto: string;
   readonly changePhotoHint: string;
   readonly backgroundNotice: string;
-  readonly backgroundSend: string;
-  readonly backgroundSendHint: string;
+  readonly backgroundDownload: string;
+  readonly backgroundDownloadHint: string;
+  readonly backgroundDownloading: (percent: number) => string;
+  readonly backgroundWorking: string;
   readonly backgroundCancel: string;
   readonly backgroundCancelHint: string;
   readonly corners: CornerLabels;
@@ -73,7 +75,6 @@ export interface EditorLabels {
 
 export interface PhotoStudioLabels {
   readonly onDevice: string;
-  readonly leftDevice: string;
   readonly working: string;
   readonly describeFailure: (failure: string) => string;
   readonly camera: CameraLabels;

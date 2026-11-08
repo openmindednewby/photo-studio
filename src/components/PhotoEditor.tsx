@@ -13,6 +13,7 @@ import { FilterPreviewRow } from './FilterPreviewRow';
 import { PhotoCanvas } from './PhotoCanvas';
 import { StudioTool } from './StudioTool';
 import { ToolBar } from './ToolBar';
+import { backgroundStatusText } from '../hooks/backgroundStatus';
 import { useBackgroundConsent } from '../hooks/useBackgroundConsent';
 import { useIsWide } from '../hooks/useIsWide';
 import { CornerMode } from '../processing/CornerMode';
@@ -48,13 +49,13 @@ export function PhotoEditor({ studio, labels, showBackground, renderResult, test
   const isWide = useIsWide();
   const [tool, setTool] = useState(StudioTool.Crop);
   const backToCrop = useCallback(() => setTool(StudioTool.Crop), []);
-  const consent = useBackgroundConsent(studio.removeBackground, backToCrop);
+  const consent = useBackgroundConsent(studio.removeBackground, backToCrop, studio.isBackgroundDownloaded);
   const { view, output, edits, findEdges, setQuad } = studio;
 
   const onSelect = useCallback(
     (next: StudioTool) => {
       setTool(next);
-      if (next === StudioTool.Background) consent.ask();
+      if (next === StudioTool.Background) void consent.ask();
       if (next === StudioTool.Straighten && edits.quad === null) void findEdges();
     },
     [consent, edits.quad, findEdges],
@@ -86,7 +87,7 @@ export function PhotoEditor({ studio, labels, showBackground, renderResult, test
   const panel = (
     <>
       {tool === StudioTool.Filters ? <AdjustPanel adjustments={edits.adjustments} labels={labels} testID={`${testID}-adjust`} onChange={studio.setAdjustments} /> : null}
-      {tool === StudioTool.Background && consent.isAsking ? <BackgroundNotice labels={labels} testID={`${testID}-background`} onCancel={consent.cancel} onSend={consent.confirm} /> : null}
+      {tool === StudioTool.Background && (consent.isAsking || consent.isWorking) ? <BackgroundNotice isWorking={consent.isWorking} labels={labels} showActions={consent.isAsking} statusText={backgroundStatusText(labels, studio.backgroundProgress)} testID={`${testID}-background`} onCancel={consent.cancel} onDownload={consent.confirm} /> : null}
     </>
   );
 

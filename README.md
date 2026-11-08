@@ -23,7 +23,7 @@ const engine = useMemo(() => createPhotoEngine(() => new Worker('/photo-studio-w
 
 - Every string comes through `labels`, so the package holds no copy.
 - `renderResult` receives the edited RGBA raster and fills the pane beside the photo.
-- `backgroundRemoval` is optional. Without it the tool is hidden. With it, nothing is sent until the user confirms the `labels.editor.backgroundNotice` text; afterwards the privacy line switches to `labels.leftDevice`.
+- `backgroundRemoval` is optional. Without it the tool is hidden. The photo stays on the device. When the port has `isDownloaded` and it answers false, the tool first shows the one-time `labels.editor.backgroundNotice` and downloads only after the user confirms; `onProgress` drives `labels.editor.backgroundDownloading`. `@dloizides/background-removal` fits the port: `{ remove: (photo, options) => removeBackground(photo, { ...options, assetBaseUrl }), isDownloaded: () => isBackgroundRemovalDownloaded({ assetBaseUrl }) }`.
 - `describeFailure` and `cameraFailure` receive a code: `ImageDecodeFailure` values from `@dloizides/image-decode`, `PhotoEngineFailure` values, or `CameraFailure` values.
 
 Theme comes from `FeedbackUiProvider` in `@dloizides/ui-feedback`.

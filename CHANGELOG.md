@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2
+
+- Background removal is on-device: `leftDevice` is gone from the controller and the labels.
+- The notice is a one-time download notice: `backgroundSend` and `backgroundSendHint` are now `backgroundDownload` and `backgroundDownloadHint`, and new `backgroundDownloading` and `backgroundWorking` labels report progress.
+- `BackgroundRemovalPort` gains `onProgress` and an optional `isDownloaded`; when it answers true the tool runs with no notice.
+- The 60 s background limit now restarts on every progress report, so a slow first download is not cut off.
+
 ## 0.1.1
 
 - The live camera stops when the page loses focus, is hidden or is left, and reopens on return.

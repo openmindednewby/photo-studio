@@ -38,7 +38,7 @@ export function PhotoStudio({ engine, labels, renderResult, backgroundRemoval, o
   return (
     <View style={styles.root} testID={testID}>
       <Text style={[styles.note, { color: theme.colors.textSecondary }]} testID={`${testID}-privacy`}>
-        {studio.leftDevice ? labels.leftDevice : labels.onDevice}
+        {labels.onDevice}
       </Text>
       {showEditor ? (
         <PhotoEditor labels={labels.editor} renderResult={renderResult} showBackground={backgroundRemoval !== undefined} studio={studio} testID={`${testID}-editor`} />

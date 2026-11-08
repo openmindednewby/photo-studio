@@ -33,6 +33,12 @@ export interface PhotoEdits {
   readonly adjustments: Adjustments;
 }
 
+export interface BackgroundRemovalProgress {
+  readonly loadedBytes: number;
+  readonly totalBytes: number | undefined;
+}
+
 export interface BackgroundRemovalPort {
-  remove(photo: Blob, options: { readonly signal: AbortSignal }): Promise<Blob>;
+  remove(photo: Blob, options: { readonly signal: AbortSignal; readonly onProgress?: (progress: BackgroundRemovalProgress) => void }): Promise<Blob>;
+  isDownloaded?(): Promise<boolean>;
 }

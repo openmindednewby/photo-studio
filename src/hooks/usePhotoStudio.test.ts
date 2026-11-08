@@ -118,7 +118,6 @@ describe('usePhotoStudio', () => {
 
     expect(port.remove).toHaveBeenCalledTimes(1);
     expect(engine.load).toHaveBeenLastCalledWith(cutout);
-    expect(result.current.leftDevice).toBe(true);
   });
 
   it('when the background port fails, keeps the photo and names the failure', async () => {
@@ -129,7 +128,6 @@ describe('usePhotoStudio', () => {
 
     expect(result.current.failure).toBe(PhotoEngineFailure.BackgroundFailed);
     expect(result.current.status).toBe(StudioStatus.Ready);
-    expect(result.current.leftDevice).toBe(false);
   });
 
   it('when the background port never answers, gives up at the time limit and names the failure', async () => {

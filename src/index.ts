@@ -41,4 +41,4 @@ export { warpQuad } from './processing/perspective';
 export { insetQuad, moveCorner, rotateQuadClockwise } from './processing/quad';
 export { renderEdits } from './processing/renderEdits';
 export type { CameraLabels, CornerLabels, EditorLabels, PhotoStudioLabels, SourceLabels } from './labels';
-export type { Adjustments, BackgroundRemovalPort, PhotoEdits, Point, Quad, Raster, Size } from './types';
+export type { Adjustments, BackgroundRemovalPort, BackgroundRemovalProgress, PhotoEdits, Point, Quad, Raster, Size } from './types';
