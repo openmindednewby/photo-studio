@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { connectVideo, useOpenCamera } from './useOpenCamera';
 import { CameraFacing } from '../camera/CameraFacing';
+import { CameraPhase } from '../camera/CameraPhase';
 import { grabFrame, setTorch } from '../camera/cameraApi';
 
 import type { CameraFailure } from '../camera/CameraFailure';
-import type { CameraPhase } from '../camera/CameraPhase';
 
 export interface CameraStream {
   readonly phase: CameraPhase;
@@ -24,7 +24,9 @@ export function useCameraStream(): CameraStream {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { phase, failure, torchAvailable, streamRef } = useOpenCamera(facing, videoRef);
 
-  useEffect(() => setTorchOn(false), [facing]);
+  useEffect(() => {
+    if (phase !== CameraPhase.Live) setTorchOn(false);
+  }, [phase]);
 
   const attachVideo = useCallback(
     (video: HTMLVideoElement | null) => {

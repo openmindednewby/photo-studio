@@ -25,6 +25,18 @@ interface PendingJob {
   readonly timer: ReturnType<typeof setTimeout>;
 }
 
+interface JobTable {
+  nextId(): number;
+  add(id: number, job: PendingJob): void;
+  settle(response: StudioResponse): void;
+  rejectAll(failure: PhotoEngineFailure): void;
+}
+
+interface LoadedSource {
+  readonly file: Blob;
+  readonly maxSide: number | undefined;
+}
+
 type RequestBody = { [K in StudioRequest['kind']]: Omit<Extract<StudioRequest, { kind: K }>, 'id'> }[StudioRequest['kind']];
 
 function wireWorker(worker: Worker, settle: (response: StudioResponse) => void, crash: () => void): void {
@@ -33,53 +45,83 @@ function wireWorker(worker: Worker, settle: (response: StudioResponse) => void, 
   worker.onmessageerror = crash;
 }
 
+function createJobTable(): JobTable {
+  const pending = new Map<number, PendingJob>();
+  let lastId = 0;
+
+  return {
+    nextId: () => {
+      lastId += 1;
+      return lastId;
+    },
+    add: (id, job) => {
+      pending.set(id, job);
+    },
+    settle: (response) => {
+      const job = pending.get(response.id);
+      if (job === undefined) return;
+      pending.delete(response.id);
+      clearTimeout(job.timer);
+      if (response.ok) job.resolve(response);
+      else job.reject(new PhotoEngineError(response.failure));
+    },
+    rejectAll: (failure) => {
+      pending.forEach((job) => {
+        clearTimeout(job.timer);
+        job.reject(new PhotoEngineError(failure));
+      });
+      pending.clear();
+    },
+  };
+}
+
 export function createPhotoEngine(spawn: () => Worker, options: PhotoEngineOptions = {}): PhotoEngine {
   const timeoutMs = options.timeoutMs ?? DEFAULT_JOB_TIMEOUT_MS;
-  const pending = new Map<number, PendingJob>();
+  const jobs = createJobTable();
   let worker: Worker | null = null;
-  let nextId = 1;
+  let source: LoadedSource | null = null;
+  let disposed = false;
 
   const failEverything = (failure: PhotoEngineFailure): void => {
     worker?.terminate();
     worker = null;
-    pending.forEach((job) => {
-      clearTimeout(job.timer);
-      job.reject(new PhotoEngineError(failure));
-    });
-    pending.clear();
+    jobs.rejectAll(failure);
   };
 
-  const settle = (response: StudioResponse): void => {
-    const job = pending.get(response.id);
-    if (job === undefined) return;
-    pending.delete(response.id);
-    clearTimeout(job.timer);
-    if (response.ok) job.resolve(response);
-    else job.reject(new PhotoEngineError(response.failure));
-  };
-
-  const ensureWorker = (): Worker => {
+  const ensureWorker = (next: RequestBody): Worker => {
     if (worker !== null) return worker;
     const created = spawn();
-    wireWorker(created, settle, () => failEverything(PhotoEngineFailure.WorkerFailed));
+    wireWorker(created, jobs.settle, () => failEverything(PhotoEngineFailure.WorkerFailed));
     worker = created;
+    if (source !== null && next.kind !== StudioRequestKind.Load) created.postMessage({ kind: StudioRequestKind.Load, ...source, id: jobs.nextId() });
     return created;
   };
 
   const send = (body: RequestBody): Promise<StudioSuccess> =>
     new Promise((resolve, reject) => {
-      const id = nextId;
-      nextId += 1;
+      if (disposed) {
+        reject(new PhotoEngineError(PhotoEngineFailure.WorkerFailed));
+        return;
+      }
+      const id = jobs.nextId();
       const timer = setTimeout(() => failEverything(PhotoEngineFailure.TimedOut), timeoutMs);
-      pending.set(id, { resolve, reject, timer });
-      ensureWorker().postMessage({ ...body, id });
+      jobs.add(id, { resolve, reject, timer });
+      ensureWorker(body).postMessage({ ...body, id });
     });
 
   return {
-    load: async (file, maxSide) => (await send({ kind: StudioRequestKind.Load, file, maxSide })).size as Size,
+    load: async (file, maxSide) => {
+      const { size } = await send({ kind: StudioRequestKind.Load, file, maxSide });
+      source = { file, maxSide };
+      return size as Size;
+    },
     render: async (edits, maxSide) => (await send({ kind: StudioRequestKind.Render, edits, maxSide })).raster as Raster,
     detectEdges: async (quarterTurns) => (await send({ kind: StudioRequestKind.Detect, quarterTurns })).quad ?? null,
     exportPng: async (edits) => (await send({ kind: StudioRequestKind.Export, edits })).blob as Blob,
-    dispose: () => failEverything(PhotoEngineFailure.WorkerFailed),
+    dispose: () => {
+      disposed = true;
+      source = null;
+      failEverything(PhotoEngineFailure.WorkerFailed);
+    },
   };
 }

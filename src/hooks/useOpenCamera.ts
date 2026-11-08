@@ -3,6 +3,7 @@ import type { MutableRefObject } from 'react';
 
 import { CameraPhase } from '../camera/CameraPhase';
 import { cameraFailureOf, hasTorch, openCamera, stopStream } from '../camera/cameraApi';
+import { watchPagePresence } from '../camera/watchPagePresence';
 
 import type { CameraFacing } from '../camera/CameraFacing';
 import type { CameraFailure } from '../camera/CameraFailure';
@@ -24,11 +25,28 @@ export function useOpenCamera(facing: CameraFacing, videoRef: MutableRefObject<H
   const [phase, setPhase] = useState(CameraPhase.Starting);
   const [failure, setFailure] = useState<CameraFailure | null>(null);
   const [torchAvailable, setTorchAvailable] = useState(false);
+  const [away, setAway] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
 
+  useEffect(
+    () =>
+      watchPagePresence({
+        hasStream: () => streamRef.current !== null,
+        onAway: () => {
+          stopStream(streamRef.current);
+          streamRef.current = null;
+          setAway(true);
+        },
+        onBack: () => setAway(false),
+      }),
+    [],
+  );
+
   useEffect(() => {
-    let cancelled = false;
     setPhase(CameraPhase.Starting);
+    setFailure(null);
+    if (away) return undefined;
+    let cancelled = false;
     openCamera(facing)
       .then((stream) => {
         if (cancelled) {
@@ -50,7 +68,7 @@ export function useOpenCamera(facing: CameraFacing, videoRef: MutableRefObject<H
       stopStream(streamRef.current);
       streamRef.current = null;
     };
-  }, [facing, videoRef]);
+  }, [facing, videoRef, away]);
 
   return { phase, failure, torchAvailable, streamRef };
 }

@@ -12,6 +12,8 @@ export { PhotoCanvas } from './components/PhotoCanvas';
 export type { PhotoCanvasProps } from './components/PhotoCanvas';
 export { usePhotoStudio } from './hooks/usePhotoStudio';
 export type { PhotoStudioController, UsePhotoStudioOptions } from './hooks/usePhotoStudio';
+export { createLatestRunner } from './hooks/createLatestRunner';
+export type { LatestRunner } from './hooks/createLatestRunner';
 export { useCameraStream } from './hooks/useCameraStream';
 export type { CameraStream } from './hooks/useCameraStream';
 export { StudioStatus } from './hooks/StudioStatus';

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 import { failureOf } from '../engine/PhotoEngineError';
 import { PhotoEngineFailure } from '../engine/PhotoEngineFailure';
@@ -21,11 +21,14 @@ export interface EditActions {
   readonly rotate: () => void;
   readonly setQuad: (quad: Quad) => void;
   readonly findEdges: () => Promise<void>;
+  readonly isFindingEdges: boolean;
   readonly setAdjustments: (adjustments: Adjustments) => void;
   readonly applyPreset: (preset: FilterPreset) => void;
 }
 
 export function useEditActions({ engine, edits, apply, setPreset, setFailure }: EditActionDeps): EditActions {
+  const [isFindingEdges, setIsFindingEdges] = useState(false);
+
   const rotate = useCallback(() => {
     apply({ ...edits, quarterTurns: edits.quarterTurns + 1, quad: edits.quad === null ? null : rotateQuadClockwise(edits.quad) });
   }, [apply, edits]);
@@ -33,12 +36,15 @@ export function useEditActions({ engine, edits, apply, setPreset, setFailure }: 
   const setQuad = useCallback((quad: Quad) => apply({ ...edits, quad }), [apply, edits]);
 
   const findEdges = useCallback(async () => {
+    setIsFindingEdges(true);
     try {
       const quad = await engine.detectEdges(edits.quarterTurns);
       if (quad === null) setFailure(PhotoEngineFailure.NoEdges);
       else apply({ ...edits, quad });
     } catch (error) {
       setFailure(failureOf(error));
+    } finally {
+      setIsFindingEdges(false);
     }
   }, [engine, apply, edits, setFailure]);
 
@@ -58,5 +64,5 @@ export function useEditActions({ engine, edits, apply, setPreset, setFailure }: 
     [apply, edits, setPreset],
   );
 
-  return { rotate, setQuad, findEdges, setAdjustments, applyPreset };
+  return { rotate, setQuad, findEdges, isFindingEdges, setAdjustments, applyPreset };
 }

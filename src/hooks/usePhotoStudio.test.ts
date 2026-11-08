@@ -147,3 +147,18 @@ describe('usePhotoStudio', () => {
     expect(result.current.failure).toBe(PhotoEngineFailure.BackgroundFailed);
   });
 });
+
+describe('usePhotoStudio.isFindingEdges', () => {
+  it('while edge detection runs, is true and returns to false when it ends', async () => {
+    let finish: (quad: null) => void = () => undefined;
+    const engine = fakeEngine({ detectEdges: jest.fn(() => new Promise<null>((resolve) => { finish = resolve; })) });
+    const { result } = await loaded(engine);
+    let pending: Promise<void> = Promise.resolve();
+
+    act(() => { pending = result.current.findEdges(); });
+
+    expect(result.current.isFindingEdges).toBe(true);
+    await act(async () => { finish(null); await pending; });
+    expect(result.current.isFindingEdges).toBe(false);
+  });
+});

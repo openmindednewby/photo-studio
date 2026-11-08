@@ -1,6 +1,7 @@
 import { createPhotoEngine } from './createPhotoEngine';
 import { PhotoEngineError } from './PhotoEngineError';
 import { PhotoEngineFailure } from './PhotoEngineFailure';
+import { StudioRequestKind } from './StudioRequestKind';
 import { NEUTRAL_EDITS } from '../processing/filterPresets';
 
 import type { StudioRequest, StudioResponse } from './protocol';
@@ -81,5 +82,57 @@ describe('createPhotoEngine', () => {
 
     await expect(first).resolves.toBeNull();
     await expect(second).resolves.toEqual(quad);
+  });
+});
+
+describe('createPhotoEngine lifetime', () => {
+  function restarting(): { first: FakeWorker; second: FakeWorker; engine: ReturnType<typeof createPhotoEngine> } {
+    const first = new FakeWorker();
+    const second = new FakeWorker();
+    const spawn = jest.fn().mockReturnValueOnce(first).mockReturnValueOnce(second);
+    return { first, second, engine: createPhotoEngine(spawn as unknown as () => Worker) };
+  }
+
+  async function loadedThenCrashed(restart: ReturnType<typeof restarting>, file: Blob, maxSide: number): Promise<void> {
+    const loading = restart.engine.load(file, maxSide);
+    restart.first.answer({ id: restart.first.posted[0].id, ok: true, size: { width: 1, height: 1 } });
+    await loading;
+    restart.first.onerror?.();
+  }
+
+  it('after dispose, rejects a new job and spawns no worker', async () => {
+    const { spawn, engine } = setup();
+    engine.dispose();
+
+    const pending = engine.render(NEUTRAL_EDITS);
+
+    await expect(pending).rejects.toBeInstanceOf(PhotoEngineError);
+    expect(spawn).not.toHaveBeenCalled();
+  });
+
+  it('when the worker dies after a load, gives its replacement the photo before the next job', async () => {
+    const restart = restarting();
+    const file = new Blob(['photo']);
+    await loadedThenCrashed(restart, file, 900);
+
+    const next = restart.engine.render(NEUTRAL_EDITS).catch(() => undefined);
+
+    expect(restart.second.posted.map((request) => request.kind)).toEqual([StudioRequestKind.Load, StudioRequestKind.Render]);
+    const replayed = restart.second.posted[0] as Extract<StudioRequest, { kind: StudioRequestKind.Load }>;
+    expect(replayed.file).toBe(file);
+    expect(replayed.maxSide).toBe(900);
+    restart.engine.dispose();
+    await next;
+  });
+
+  it('when the job after a restart is itself a load, sends only that load', async () => {
+    const restart = restarting();
+    await loadedThenCrashed(restart, new Blob(['old']), 900);
+
+    const next = restart.engine.load(new Blob(['new'])).catch(() => undefined);
+
+    expect(restart.second.posted.map((request) => request.kind)).toEqual([StudioRequestKind.Load]);
+    restart.engine.dispose();
+    await next;
   });
 });

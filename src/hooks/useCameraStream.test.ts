@@ -84,3 +84,78 @@ describe('useCameraStream', () => {
     expect(getUserMedia.mock.calls[1][0].video.facingMode).toEqual({ ideal: 'user' });
   });
 });
+
+describe('useCameraStream page presence', () => {
+  async function liveCamera(capabilities: object = {}): Promise<ReturnType<typeof fakeStream> & { getUserMedia: jest.Mock; camera: { readonly current: ReturnType<typeof useCameraStream> } }> {
+    const fake = fakeStream(capabilities);
+    const getUserMedia = jest.fn().mockResolvedValue(fake.stream);
+    setMediaDevices({ getUserMedia });
+    const { result } = renderHook(() => useCameraStream());
+    await waitFor(() => expect(result.current.phase).toBe(CameraPhase.Live));
+    return { ...fake, getUserMedia, camera: result };
+  }
+
+  function setVisibility(state: string): void {
+    Object.defineProperty(document, 'visibilityState', { value: state, configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  }
+
+  function fire(eventName: string): void {
+    window.dispatchEvent(new Event(eventName));
+  }
+
+  afterEach(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+    setMediaDevices(undefined);
+  });
+
+  it.each(['blur', 'pagehide'])('on window %s with a live stream, stops the tracks', async (eventName) => {
+    const { stop } = await liveCamera();
+
+    act(() => fire(eventName));
+
+    expect(stop).toHaveBeenCalledTimes(1);
+  });
+
+  it('when the page is hidden, stops the tracks', async () => {
+    const { stop } = await liveCamera();
+
+    act(() => setVisibility('hidden'));
+
+    expect(stop).toHaveBeenCalledTimes(1);
+  });
+
+  it('after leaving and coming back, opens the camera again and goes live', async () => {
+    const { getUserMedia, camera } = await liveCamera();
+    act(() => fire('blur'));
+
+    act(() => fire('focus'));
+
+    await waitFor(() => expect(getUserMedia).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(camera.current.phase).toBe(CameraPhase.Live));
+  });
+
+  it('on a blur while the camera is still opening, keeps opening', async () => {
+    const fake = fakeStream();
+    let finishOpen: (stream: MediaStream) => void = () => undefined;
+    setMediaDevices({ getUserMedia: jest.fn(() => new Promise<MediaStream>((resolve) => { finishOpen = resolve; })) });
+    const { result } = renderHook(() => useCameraStream());
+    act(() => fire('blur'));
+
+    await act(async () => finishOpen(fake.stream));
+
+    await waitFor(() => expect(result.current.phase).toBe(CameraPhase.Live));
+    expect(fake.stop).not.toHaveBeenCalled();
+  });
+
+  it('with the torch on, reads as off after the camera comes back', async () => {
+    const { camera } = await liveCamera({ torch: true });
+    await act(() => camera.current.toggleTorch());
+    act(() => fire('blur'));
+
+    act(() => fire('focus'));
+
+    await waitFor(() => expect(camera.current.phase).toBe(CameraPhase.Live));
+    expect(camera.current.torchOn).toBe(false);
+  });
+});

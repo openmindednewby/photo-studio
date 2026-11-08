@@ -79,7 +79,7 @@ export function PhotoEditor({ studio, labels, showBackground, renderResult, test
   const previews = <FilterPreviewRow labels={labels} previews={studio.previews} selected={studio.preset} testID={`${testID}-presets`} onSelect={studio.applyPreset} />;
   const footer = (
     <View style={styles.footer}>
-      {tool === StudioTool.Straighten ? <Button accessibilityHint={labels.findEdgesHint} accessibilityLabel={labels.findEdges} label={labels.findEdges} testID={`${testID}-find-edges`} variant="outline" onPress={findEdges} /> : null}
+      {tool === StudioTool.Straighten ? <Button accessibilityHint={labels.findEdgesHint} accessibilityLabel={labels.findEdges} label={labels.findEdges} loading={studio.isFindingEdges} testID={`${testID}-find-edges`} variant="outline" onPress={findEdges} /> : null}
       <Button accessibilityHint={labels.changePhotoHint} accessibilityLabel={labels.changePhoto} label={labels.changePhoto} testID={`${testID}-change`} variant="outline" onPress={studio.clear} />
     </View>
   );

@@ -19,6 +19,7 @@ export interface StudioSession {
 
 export function createStudioSession(ops: StudioImageOps): StudioSession {
   let source: Raster | null = null;
+  let tail: Promise<unknown> = Promise.resolve();
 
   const requireSource = (): Raster => {
     if (source === null) throw new PhotoEngineError(PhotoEngineFailure.NoPhoto);
@@ -43,13 +44,19 @@ export function createStudioSession(ops: StudioImageOps): StudioSession {
     }
   };
 
+  const runSafely = async (request: StudioRequest): Promise<StudioResponse> => {
+    try {
+      return await run(request);
+    } catch (error) {
+      return { id: request.id, ok: false, failure: failureOf(error) };
+    }
+  };
+
   return {
-    handle: async (request) => {
-      try {
-        return await run(request);
-      } catch (error) {
-        return { id: request.id, ok: false, failure: failureOf(error) };
-      }
+    handle: (request) => {
+      const response = tail.then(() => runSafely(request));
+      tail = response;
+      return response;
     },
   };
 }
