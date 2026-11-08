@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- The live camera reports the page as back only when it is visible: a `focus` or `pageshow` on a hidden page no longer reopens it.
+
 ## 0.1.2
 
 - Background removal is on-device: `leftDevice` is gone from the controller and the labels.

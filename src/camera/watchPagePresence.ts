@@ -16,14 +16,17 @@ export function watchPagePresence({ hasStream, onAway, onBack }: PagePresence): 
   };
   window.addEventListener('blur', onBlur);
   window.addEventListener('pagehide', onAway);
-  window.addEventListener('focus', onBack);
-  window.addEventListener('pageshow', onBack);
+  const onReturn = (): void => {
+    if (document.visibilityState === 'visible') onBack();
+  };
+  window.addEventListener('focus', onReturn);
+  window.addEventListener('pageshow', onReturn);
   document.addEventListener('visibilitychange', onVisibility);
   return () => {
     window.removeEventListener('blur', onBlur);
     window.removeEventListener('pagehide', onAway);
-    window.removeEventListener('focus', onBack);
-    window.removeEventListener('pageshow', onBack);
+    window.removeEventListener('focus', onReturn);
+    window.removeEventListener('pageshow', onReturn);
     document.removeEventListener('visibilitychange', onVisibility);
   };
 }
