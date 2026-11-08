@@ -1,30 +1,64 @@
 {
   "name": "@dloizides/photo-studio",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "On-device photo capture and clean-up for RN-web: live camera with fallback, gallery and drop, crop, rotate, edge detection with perspective straighten, filters, and a side-by-side slot, run in a Web Worker.",
-  "keywords": ["react-native-web", "camera", "crop", "perspective", "document-scanner", "image-filters", "web-worker"],
+  "keywords": [
+    "react-native-web",
+    "camera",
+    "crop",
+    "perspective",
+    "document-scanner",
+    "image-filters",
+    "web-worker"
+  ],
   "author": "dloizides",
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/openmindednewby/photo-studio.git" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openmindednewby/photo-studio.git"
+  },
   "homepage": "https://github.com/openmindednewby/photo-studio#readme",
-  "bugs": { "url": "https://github.com/openmindednewby/photo-studio/issues" },
+  "bugs": {
+    "url": "https://github.com/openmindednewby/photo-studio/issues"
+  },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "react-native": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
-      "browser": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
-      "require": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
-      "import": { "types": "./dist/index.d.mts", "default": "./dist/index.mjs" },
-      "default": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
+      "react-native": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "browser": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "default": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
     },
     "./worker": "./dist/photo-studio-worker.js",
     "./package.json": "./package.json"
   },
-  "files": ["dist", "README.md", "CHANGELOG.md"],
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "sideEffects": false,
-  "engines": { "node": ">=18.0.0" },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "build": "rimraf dist && tsup",
     "test": "jest",
@@ -37,7 +71,9 @@
     "prepublishOnly": "npm run clean && npm run build && npm run test",
     "version": "npm run build"
   },
-  "dependencies": { "@dloizides/image-decode": "^0.1.2" },
+  "dependencies": {
+    "@dloizides/image-decode": "^0.1.2"
+  },
   "peerDependencies": {
     "@dloizides/ui-buttons": ">=1.23.0",
     "@dloizides/ui-feedback": ">=1.12.0",
